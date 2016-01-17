@@ -30,7 +30,7 @@ public class BlockerTower extends Tower{
         maxHealth = ProtectConstants.BLOCKER_MAX_HEALTH;
         health = maxHealth; // TODO make 1/2 of max for upgrade to full maxHealth
         type = ProtectConstants.TowerTypes.BLOCKER;
-        range = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE * 10);
+        range = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE / 2);
         collisionCircle = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE);
 
 

@@ -22,6 +22,8 @@ import java.util.Random;
 public class EnemyFactory {
     GameManager gameManager;
     SpawnPoints spawnPoints;
+    int enemiesBeforeBoss = 25;
+    int totalEnemiesSpawned = 0;
     int spawnCounter = 0;
     int spawnCounterLimit = 10;
     float startDelay = 100;
@@ -57,8 +59,11 @@ public class EnemyFactory {
         // Gdx.app.log("EnemyFactory", "create enemies");
         waveDead = false;
 
-        // TODO change to 3, 0 for Boss test
-        if(wavesCompleted == 3) {
+        // TODO < for boss test
+        if(totalEnemiesSpawned >= enemiesBeforeBoss){
+            gameManager.playBossIsComing();
+            gameManager.playBossMusic();
+            gameManager.setBossCreated();
             // spawn boss
             enemyObjects.add(new EnemyObjectBoss(gameManager, spawnPoints.getRandomSpawnPoint(), 0));
         }else{
@@ -110,6 +115,10 @@ public class EnemyFactory {
                         }
                     }
                 }
+                totalEnemiesSpawned += spawnCounter;
+                Gdx.app.log("EnemyFactory", "total enemies: " + totalEnemiesSpawned);
+
+                spawnCounter = 0;
                 count++;
 
             } else {
@@ -119,11 +128,25 @@ public class EnemyFactory {
                 waves = wave2;
             }
         }
+
         return enemyObjects;
     }
 
     public EnemyObject createBossSpawn(Vector2 spawnPosition){
-       return new EnemyObject1(spawnPosition, startDelay * spawnCounter);
+        float pick = random.nextFloat();
+        if (pick <= 0.25f) {
+            return new EnemyObject1(spawnPosition, startDelay * spawnCounter);
+        }
+        if (pick > 0.25f && pick <= 0.5f) {
+            return new EnemyObject2(spawnPosition, startDelay * spawnCounter);
+        }
+        if (pick > 0.5f && pick <= 0.75f) {
+            return new EnemyObject3(spawnPosition, startDelay * spawnCounter);
+        }
+        if (pick > 0.75f) {
+            return new EnemyObject4(spawnPosition, startDelay * spawnCounter);
+        }
+        return new EnemyObject1(spawnPosition, startDelay * spawnCounter);
     }
 
     public void setWaveDead(){
@@ -138,20 +161,26 @@ public class EnemyFactory {
         Gdx.app.log("EnemyFactory", "spawnCounter: " + spawnCounter + ", startDelay: " + startDelay * spawnCounter);
         spawnCounter++;
         enemyObjects.add(new EnemyObject1(position, startDelay * spawnCounter));
+        // gameManager.playSpawn();
     }
 
     private void createEnemy2(Vector2 position){
         spawnCounter++;
-        enemyObjects.add(new EnemyObject1(position, startDelay * spawnCounter));
+        enemyObjects.add(new EnemyObject2(position, startDelay * spawnCounter));
+        // gameManager.playSpawn2();
     }
 
     private void createEnemy3(Vector2 position){
         spawnCounter++;
-        enemyObjects.add(new EnemyObject1(position, startDelay * spawnCounter));
+        enemyObjects.add(new EnemyObject3(position, startDelay * spawnCounter));
     }
 
     private void createEnemy4(Vector2 position){
         spawnCounter++;
-        enemyObjects.add(new EnemyObject1(position, startDelay * spawnCounter));
+        enemyObjects.add(new EnemyObject4(position, startDelay * spawnCounter));
+    }
+
+    public float getTotalEnemiesSpawned(){
+        return totalEnemiesSpawned;
     }
 }

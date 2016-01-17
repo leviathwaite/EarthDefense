@@ -80,6 +80,18 @@ public class GameManager {
     Array<PlayerBullet> playerBullets;
     Array<EnemyBullet> enemyBullets;
 
+    boolean pause = false;
+    boolean gameOver = false;
+    boolean earthDead = false;
+
+    int gameOverTime = 90;
+    int gameOverTimer = gameOverTime;
+
+    float slowMotion = 0.5f;
+
+    boolean bossCreated = false;
+    boolean bossDefeated = false;
+
     public GameManager(SpaceLifeGame game, SpriteBatch batch, StretchViewport viewport){
         this.game = game;
         this.batch = batch;
@@ -130,6 +142,7 @@ public class GameManager {
         selectedStatusTower = new Tower();
         selectedStatusTower.setType(ProtectConstants.TowerTypes.NULL);
 
+        playLevelMusic();
     }
 
 
@@ -143,24 +156,19 @@ public class GameManager {
 
 
     public void update(float delta) {
-        earth.update(delta);
-        particleEffects.update(delta);
-
-        // AssetsManager.explosionBlue.update(delta);
-
-        // TODO create with wave controller/manager
-        if(enemyObjects.size == 0){
-            enemyFactory.setWaveDead();
-            createEnemyWave();
+        // iterate thru towers
+        Iterator<Tower> towersUpdateIter = towers.iterator();
+        while (towersUpdateIter.hasNext()) {
+            Tower updateTower = towersUpdateIter.next();
+            updateTower.update(delta);
         }
-
 
         // iterate thru energys
         Iterator<Energy> energyObjectsIter = energys.iterator();
         while (energyObjectsIter.hasNext()) {
             Energy energyObject = energyObjectsIter.next();
 
-            // remove dead enemies
+            // remove dead energy objects
             if (energyObject.isDead()) {
                 energyObjectsIter.remove();
             }
@@ -168,163 +176,209 @@ public class GameManager {
             energyObject.update(delta);
         }
 
-       // earth.update(delta);
+        if(earthDead || bossDefeated) {
+            stopLevelMusic();
+            stopBossMusic();
+            if (gameOverTimer <= 0) {
+                gameOver = true;
+            } else {
+                gameOverTimer--;
+            }
+        }
 
-        // iterate thru enemies
-        Iterator<EnemyObject> enemyObjectsIter = enemyObjects.iterator();
-        while (enemyObjectsIter.hasNext()) {
-            EnemyObject enemyObject = enemyObjectsIter.next();
+        if(gameOver) {
+            if(bossDefeated){
+                enemyObjects.clear();
+                game.setWinScreen();
+            }else {
+                messageRenderer.setGameOver();
+            }
+        }else{
+            // game is over, slow down time to let it sink in
+            if(gameOverTimer < gameOverTime){
+                delta *= slowMotion;
+            }
+            earth.update(delta);
+            particleEffects.update(delta);
 
-            // remove dead enemies
-            if (enemyObject.isDead()) {
-                if(enemyObject.getType() == ProtectConstants.EnemyTypes.BOSS){
-                    game.setWinScreen();
-                }
-                enemyObjectsIter.remove();
+            // AssetsManager.explosionBlue.update(delta);
+
+            // TODO create with wave controller/manager
+            if (enemyObjects.size == 0) {
+                enemyFactory.setWaveDead();
+                createEnemyWave();
             }
 
-            enemyObject.update(delta);
 
-            // check enemy collision with earth
-            if (earth.checkForCollision(enemyObject.getCollisionCircle())) {
-                enemyObject.hitEarth();
-                float power = .5f;
-                float time = .5f;
-                specialEffects.setShake(power, time);
-                specialEffects.setFlashRed();
-                earth.hitByEnemy(enemyObject.getHitStrength());
-            }
 
-            // if displayed tower destroyed, remove from menu
-            if(selectedStatusTower.isDead()) {
-                selectedStatusTower = new Tower();
-                selectedStatusTower.setType(ProtectConstants.TowerTypes.NULL);
-            }
 
-            // iterate thru towers
-            Iterator<Tower> towersIter = towers.iterator();
-            while (towersIter.hasNext()) {
-                Tower tower = towersIter.next();
+            // earth.update(delta);
 
-                // Remove dead towers
-                if (tower.isDead()) {
-                    // TODO clear playerslot when tower destroyed
-                    for(PlayerObjectSlot playerSlot: playerSlots){
-                        if(playerSlot.checkOverlap(tower.getCollisionCircle())){
-                            playerSlot.setOccupied(false, ProtectConstants.TowerTypes.NULL);
+            // iterate thru enemies
+            Iterator<EnemyObject> enemyObjectsIter = enemyObjects.iterator();
+            while (enemyObjectsIter.hasNext()) {
+                EnemyObject enemyObject = enemyObjectsIter.next();
 
-                        }
+                // remove dead enemies
+                if (enemyObject.isDead()) {
+                    if (enemyObject.getType() == ProtectConstants.EnemyTypes.BOSS) {
+                        playBossDestroyed();
+                        blueExplosion(enemyObject.getPosition());
+                        bossDefeated = true;
                     }
-                    towersIter.remove();
-
+                    playThud();
+                    enemyObjectsIter.remove();
                 }
 
-                tower.update(delta);
+                enemyObject.update(delta);
 
-                if(enemyObject.checkCollision(tower.getCollisionCircle())){
-                    enemyObject.hitTower(tower);
+                // check enemy collision with earth
+                if (earth.checkForCollision(enemyObject.getCollisionCircle())) {
+                    enemyObject.hitEarth();
                     float power = .5f;
                     float time = .5f;
                     specialEffects.setShake(power, time);
-                    tower.hitByEnemyObject(enemyObject.getHitStrength());
+                    specialEffects.setFlashRed();
+                    earth.hitByEnemy(enemyObject.getHitStrength());
+                    playHitEarth();
+                    earthDead = true;
                 }
 
-                // ShooterTower
-                if (tower.getType() == ProtectConstants.TowerTypes.SHOOTER) {
-
-                    // Narrow down collisions
-                    if (tower.inRange(enemyObject.getCollisionCircle())) {
-                        enemiesInRange.add(enemyObject);
-                    }
-
-                    EnemyObject closestEnemy = new EnemyObject(new Vector2(-100, -100), 0);
-                    if (enemiesInRange.size > 1) {
-
-                        float distance = 2000; // ridiculous distance
-                        // check in range for target/closest
-                        for (EnemyObject enemyObjectInRange : enemiesInRange) {
-                            if (distance < distanceBetweenTwoPoints(tower.getPosition(),
-                                    enemyObjectInRange.getPosition())) {
-                                closestEnemy = enemyObjectInRange;
-                            }
-                        }
-                        // pass enemy
-                        tower.setTarget(closestEnemy, delta);
-                    }
-                    if (enemiesInRange.size == 1) {
-                        closestEnemy = enemiesInRange.first();
-                        tower.setTarget(closestEnemy, delta);
-                    }
-                    enemiesInRange.clear();
+                // if displayed tower destroyed, remove from menu
+                if (selectedStatusTower.isDead()) {
+                    selectedStatusTower = new Tower();
+                    selectedStatusTower.setType(ProtectConstants.TowerTypes.NULL);
                 }
 
-                if (tower.getType() == ProtectConstants.TowerTypes.MINE) {
-                    if (tower.checkCollision(enemyObject.getCollisionCircle())) {
-                        enemyObject.hitMineTower();
-                        float power = .5f;
-                        float time = .5f;
-                        specialEffects.setShake(power, time);
-                        particleEffects.addEffect(AssetsManager.explosion, enemyObject.getPosition());
+                // iterate thru towers
+                Iterator<Tower> towersIter = towers.iterator();
+                while (towersIter.hasNext()) {
+                    Tower tower = towersIter.next();
 
-                        // find player slot and free it
-                        for(PlayerObjectSlot playerSlot: playerSlots){
-                            if(playerSlot.checkOverlap(tower.getCollisionCircle())){
+                    // Remove dead towers
+                    if (tower.isDead()) {
+                        playTowerDied();
+                        // TODO clear playerslot when tower destroyed
+                        for (PlayerObjectSlot playerSlot : playerSlots) {
+                            if (playerSlot.checkOverlap(tower.getCollisionCircle())) {
                                 playerSlot.setOccupied(false, ProtectConstants.TowerTypes.NULL);
 
                             }
                         }
-                        tower.destoryed();
-                    }
-                }
+                        towersIter.remove();
 
-                Iterator<PlayerBullet> playerBulletIter = playerBullets.iterator();
-                while (playerBulletIter.hasNext()) {
-                    PlayerBullet playerBullet = playerBulletIter.next();
-
-                    if (playerBullet.isDead()) {
-                        playerBulletIter.remove();
                     }
 
-                    playerBullet.update(delta);
 
-                    // Booster Tower collision with playerBullet
-                    if(tower.getType() == ProtectConstants.TowerTypes.BOOSTER){
-                        if(tower.checkCollision(playerBullet.getCollisionCircle())){
-                            playerBullet.setBoosted();
+
+                    if (enemyObject.checkCollision(tower.getCollisionCircle())) {
+                        enemyObject.hitTower(tower);
+                        float power = .5f;
+                        float time = .5f;
+                        specialEffects.setShake(power, time);
+                        tower.hitByEnemyObject(enemyObject.getHitStrength());
+                    }
+
+                    // ShooterTower
+                    if (tower.getType() == ProtectConstants.TowerTypes.SHOOTER) {
+
+                        // Narrow down collisions
+                        if (tower.inRange(enemyObject.getCollisionCircle())) {
+                            enemiesInRange.add(enemyObject);
+                        }
+
+                        EnemyObject closestEnemy = new EnemyObject(new Vector2(-100, -100), 0);
+                        if (enemiesInRange.size > 1) {
+
+                            float distance = 2000; // ridiculous distance
+                            // check in range for target/closest
+                            for (EnemyObject enemyObjectInRange : enemiesInRange) {
+                                if (distance < distanceBetweenTwoPoints(tower.getPosition(),
+                                        enemyObjectInRange.getPosition())) {
+                                    closestEnemy = enemyObjectInRange;
+                                }
+                            }
+                            // pass enemy
+                            tower.setTarget(closestEnemy, delta);
+                        }
+                        if (enemiesInRange.size == 1) {
+                            closestEnemy = enemiesInRange.first();
+                            tower.setTarget(closestEnemy, delta);
+                        }
+                        enemiesInRange.clear();
+                    }
+
+                    if (tower.getType() == ProtectConstants.TowerTypes.MINE) {
+                        if (tower.checkCollision(enemyObject.getCollisionCircle())) {
+                            enemyObject.hitMineTower();
+                            playBoom();
+                            float power = .75f;
+                            float time = .75f;
+                            specialEffects.setShake(power, time);
+                            particleEffects.addEffect(AssetsManager.explosion, enemyObject.getPosition());
+
+                            // find player slot and free it
+                            for (PlayerObjectSlot playerSlot : playerSlots) {
+                                if (playerSlot.checkOverlap(tower.getCollisionCircle())) {
+                                    playerSlot.setOccupied(false, ProtectConstants.TowerTypes.NULL);
+
+                                }
+                            }
+                            tower.destoryed();
                         }
                     }
 
-                    if (enemyObject.checkCollision(playerBullet.getCollisionCircle())) {
-                        enemyObject.hitByPlayerBullet(playerBullet.getHitStrength());
-                        playerBullet.hitEnemy();
+                    Iterator<PlayerBullet> playerBulletIter = playerBullets.iterator();
+                    while (playerBulletIter.hasNext()) {
+                        PlayerBullet playerBullet = playerBulletIter.next();
+
+                        if (playerBullet.isDead()) {
+                            playerBulletIter.remove();
+                        }
+
+                        playerBullet.update(delta);
+
+                        // Booster Tower collision with playerBullet
+                        if (tower.getType() == ProtectConstants.TowerTypes.BOOSTER) {
+                            if (tower.checkCollision(playerBullet.getCollisionCircle())) {
+                                playerBullet.setBoosted();
+                            }
+                        }
+
+                        if (enemyObject.checkCollision(playerBullet.getCollisionCircle())) {
+                            enemyObject.hitByPlayerBullet(playerBullet.getHitStrength());
+                            playerBullet.hitEnemy();
+                        }
+
+                    }
+
+                    Iterator<EnemyBullet> enemyBulletIter = enemyBullets.iterator();
+                    while (enemyBulletIter.hasNext()) {
+                        EnemyBullet enemyBullet = enemyBulletIter.next();
+
+                        if (enemyBullet.isDead()) {
+                            enemyBulletIter.remove();
+                        }
+
+                        enemyBullet.update(delta);
+
+                        if (tower.checkCollision(enemyBullet.getCollisionCircle())) {
+                            // decrement tower health
+                            tower.hitByEnemyBullet(enemyBullet.getHitStrength());
+                        }
+
                     }
 
                 }
-
-                Iterator<EnemyBullet> enemyBulletIter = enemyBullets.iterator();
-                while (enemyBulletIter.hasNext()) {
-                    EnemyBullet enemyBullet = enemyBulletIter.next();
-
-                    if (enemyBullet.isDead()) {
-                        enemyBulletIter.remove();
-                    }
-
-                    enemyBullet.update(delta);
-
-                    if (tower.checkCollision(enemyBullet.getCollisionCircle())) {
-                        // decrement tower health
-                        tower.hitByEnemyBullet(enemyBullet.getHitStrength());
-                    }
-
-                }
-
             }
-        }
 
-        specialEffects.update(delta);
-        messageRenderer.update(delta);
-        enemyFactory.update(delta);
+            specialEffects.update(delta);
+            messageRenderer.update(delta);
+            enemyFactory.update(delta);
+        }
     }
+
+
 
     public void createEnemyWave(){
         if(enemyFactory.isWaveDead()) {
@@ -471,7 +525,9 @@ public class GameManager {
 
     public void draw(SpriteBatch batch){
         particleEffects.draw(batch);
-        worldRenderer.drawEarth(earth.getPosition(), earth.getRotation());
+        if(!earthDead) {
+            worldRenderer.drawEarth(earth.getPosition(), earth.getRotation());
+        }
 
         // TODO need a available type array
         for (Tower tower: towers) {
@@ -532,6 +588,11 @@ public class GameManager {
     public void playerShoots(Tower tower){
         // incase target destroyed
         if(tower.getTarget() != null) {
+            playShoot();
+            float power = .25f;
+            float time = .25f;
+            specialEffects.setShake(power, time);
+             // TODO add Particles
             playerBullets.add(new PlayerBullet(tower.getPosition(),
                     tower.getTarget(), tower.getBulletDamage()));
         }
@@ -565,71 +626,77 @@ public class GameManager {
     }
 
     public void reset() {
+        init();
     }
 
     public void touched(Vector2 worldClick) {
-        // check energy pickup for touches
-        for(Energy energy: energys){
-            if(energy.checkCollision(worldClick)){
-                energy.touched();
-                specialEffects.setFlashYellow();
-                playerWallet.addEnergy(energy.getValue());
-            }
-        }
-
-
-     // TODO add selecting towers for upgrade/repair
-        if(statusMenu.checkDisableButtonCollision(worldClick)){
-            // disable button touched
-            // find player slot and free it
-            for(PlayerObjectSlot playerSlot: playerSlots){
-                if(playerSlot.checkOverlap(selectedStatusTower.getCollisionCircle())){
-                    playerWallet.addEnergy(selected.getCost(selectedStatusTower.getType()) / 2);
-                    playerSlot.setOccupied(false, ProtectConstants.TowerTypes.NULL);
-
+        if(!pause) {
+            // check energy pickup for touches
+            for (Energy energy : energys) {
+                if (energy.checkCollision(worldClick)) {
+                    energy.touched();
+                    playCollectEnergy();
+                    // TODO add particle effect
+                    specialEffects.setFlashYellow();
+                    playerWallet.addEnergy(energy.getValue());
                 }
             }
-            selectedStatusTower.disableTouched();
-        }
 
-        for (PlayerObjectSlot playerSlot: playerSlots) {
-            if(playerSlot.checkCollision(worldClick)){
-                if(playerSlot.isOccupied()){
-                    // show tower stats
-                    for(Tower tower: towers){
-                        if(tower.checkCollisionPoint(worldClick)){
-                            selectedStatusTower = tower;
+
+            // TODO add selecting towers for upgrade/repair
+            if (statusMenu.checkDisableButtonCollision(worldClick)) {
+                // disable button touched
+                // find player slot and free it
+                for (PlayerObjectSlot playerSlot : playerSlots) {
+                    if (playerSlot.checkOverlap(selectedStatusTower.getCollisionCircle())) {
+                        playerWallet.addEnergy(selected.getCost(selectedStatusTower.getType()) / 2);
+                        playerSlot.setOccupied(false, ProtectConstants.TowerTypes.NULL);
+
+                    }
+                }
+                selectedStatusTower.disableTouched();
+            }
+
+            for (PlayerObjectSlot playerSlot : playerSlots) {
+                if (playerSlot.checkCollision(worldClick)) {
+                    if (playerSlot.isOccupied()) {
+                        // show tower stats
+                        for (Tower tower : towers) {
+                            if (tower.checkCollisionPoint(worldClick)) {
+                                selectedStatusTower = tower;
+                            }
+                        }
+                    } else {
+                        if (selected.getSelected()) {
+                            // place selected
+                            playerWallet.makePurchase(selected.getCost());
+                            towers.add(towerFactory.createTower(selected.getType(), playerSlot.getPosition()));
+                            playerSlot.setOccupied(true, selected.getType());
+                            // TODO
+                            selected.setSelected(false);
                         }
                     }
                 }
-                else{
-                    if(selected.getSelected()) {
-                        // place selected
-                        playerWallet.makePurchase(selected.getCost());
-                        towers.add(towerFactory.createTower(selected.getType(), playerSlot.getPosition()));
-                        playerSlot.setOccupied(true, selected.getType());
-                        // TODO
-                        selected.setSelected(false);
-                    }
-                }
             }
-        }
 
-        // ui object selection
-        // TODO check energy
-        for (MenuObject menuObject : menuObjects) {
-            if(menuObject.checkForTouch(worldClick)){
-                if(playerWallet.getEnergyBalance() >= menuObject.getCost()) {
-                    selected.setSelected(false);
-                    menuObject.setSelected(true);
-                    selected = menuObject;
-                }else{
-                    messageRenderer.setString("Not Enough Energy");
-                    selected.setSelected(false);
-                    menuObject.setSelected(false);
+            // ui object selection
+            // TODO check energy
+            for (MenuObject menuObject : menuObjects) {
+                if (menuObject.checkForTouch(worldClick)) {
+                    if (playerWallet.getEnergyBalance() >= menuObject.getCost()) {
+                        selected.setSelected(false);
+                        menuObject.setSelected(true);
+                        selected = menuObject;
+                        playButton();
+                    } else {
+                        messageRenderer.setString("Not Enough Energy");
+                        selected.setSelected(false);
+                        menuObject.setSelected(false);
+                        playNoEnergy();
+                    }
+
+
                 }
-
-
             }
         }
     }
@@ -683,12 +750,138 @@ public class GameManager {
         float time = .5f;
         specialEffects.setShake(power, time);
         */
-        particleEffects.addEffect(AssetsManager.explosion,
-                new Vector2(ProtectConstants.VIEWPORT_WIDTH_CENTER, ProtectConstants.VIEWPORT_HEIGHT_CENTER));
+        playBossIsComing();
     }
 
     public void messageBigWave() {
         messageRenderer.setString("Big Wave Coming!");
     }
 
+    public void playBoom(){
+        /*
+        long id =  AssetsManager.boom.play();
+        AssetsManager.bossIsComing.setPitch(id, 0.4f);
+        */
+        AssetsManager.boom.play();
+    }
+
+    public void playBossIsComing(){
+        long id =  AssetsManager.bossIsComing.play();
+        AssetsManager.bossIsComing.setPitch(id, 0.4f);
+    }
+
+    public void playButton(){
+        AssetsManager.button.play();
+    }
+
+    public void playNoEnergy(){
+        AssetsManager.noenergy.play();
+    }
+
+    public void playSpawn(){
+        AssetsManager.spawn.play();
+    }
+
+    public void playSpawn2(){
+        AssetsManager.spawn2.play();
+    }
+
+    public void playCollectEnergy(){
+        AssetsManager.collectenergy.play();
+    }
+
+    public void playShoot(){
+        AssetsManager.shoot.play();
+    }
+
+    public void playHitEarth(){
+        AssetsManager.hitearth.play();
+    }
+
+    public void playThud(){
+        AssetsManager.thud.play();
+    }
+
+    private void playTowerDied() {
+    }
+
+    private void playBossDestroyed(){
+
+    }
+
+    public void playLevelMusic(){
+        AssetsManager.levelMusic.setLooping(true);
+        AssetsManager.levelMusic.play();
+    }
+
+    public void stopLevelMusic(){
+            AssetsManager.levelMusic.stop();
+    }
+
+    public void playBossMusic(){
+        stopLevelMusic();
+        AssetsManager.bossMusic.setLooping(true);
+        AssetsManager.bossMusic.play();
+    }
+
+    public void stopBossMusic(){
+        if(AssetsManager.bossMusic.isPlaying()) {
+            AssetsManager.bossMusic.stop();
+        }
+    }
+
+    public boolean getGameOver(){
+        return gameOver;
+    }
+
+    public void setGameOver(){
+        gameOver = false;
+        gameOverTimer = gameOverTime;
+        earthDead = false;
+    }
+
+    public void blueExplosion(Vector2 position){
+        particleEffects.addEffect(AssetsManager.explosionBlue, position);
+    }
+
+    // TODO sounds need moved to a manager, long sound effects will continue to play whe pause pressed
+    public void togglePause() {
+        pause = !pause;
+        if(pause) {
+            stopLevelMusic();
+            if(bossCreated) {
+                stopBossMusic();
+            }
+        }else{
+            if(bossCreated){
+                playBossMusic();
+            }else {
+                playLevelMusic();
+            }
+        }
+    }
+
+    public void setPause(){
+        pause = true;
+        if(pause) {
+            stopLevelMusic();
+            if(bossCreated) {
+                stopBossMusic();
+            }
+        }else{
+            if(bossCreated){
+                playBossMusic();
+            }else {
+                playLevelMusic();
+            }
+        }
+    }
+
+    public boolean isPaused(){
+        return pause;
+    }
+
+    public void setBossCreated(){
+        bossCreated = true;
+    }
 }

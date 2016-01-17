@@ -18,11 +18,15 @@ public class MessageRenderer {
     Color orgColor;
     String string;
 
-    boolean show = true; // default: false
+    boolean show = false; // default: false
     float showTime = 100;
     float showTimer = showTime;
     float fadeOffset = 20;
     float fadeAmount = 0;
+
+    boolean showGameOver = false;
+    String gameOverMessage;
+    Vector2 gameOverPosition;
 
     Vector2 energyBalancePosition;
 
@@ -30,6 +34,9 @@ public class MessageRenderer {
          // bitmapFont = new BitmapFont();
          orgColor = new Color(com.nerddaygames.rupert.games.Protect.managers.AssetsManager.messageBitmapFont.getColor());
          string = new String("Testing");
+
+         gameOverMessage = new String("Earth Destroyed, Click To Restart");
+         gameOverPosition = new Vector2(ProtectConstants.VIEWPORT_WIDTH_CENTER, ProtectConstants.VIEWPORT_HEIGHT_CENTER);
 
          energyBalancePosition = new Vector2(ProtectConstants.VIEWPORT_WIDTH_CENTER, ProtectConstants.GAME_OBJECT_SIZE);
      }
@@ -46,6 +53,9 @@ public class MessageRenderer {
 
 
     public void draw(SpriteBatch batch){
+        if(showGameOver){
+            drawGameOver(batch);
+        }
 
         // TODO move out of draw method
         if(show) {
@@ -64,7 +74,7 @@ public class MessageRenderer {
 
             // Draw energy balance
             GlyphLayout easyLayout = new GlyphLayout(AssetsManager.bitmapFont, string);
-            AssetsManager.messageBitmapFont.draw(batch,
+            AssetsManager.bitmapFont.draw(batch,
                     string,
                     energyBalancePosition.x - (easyLayout.width / 2),
                     energyBalancePosition.y,
@@ -75,6 +85,8 @@ public class MessageRenderer {
 
         }
     }
+
+
 
     public void update(float delta) {
         // add timer to show message for brief amount of time
@@ -87,6 +99,23 @@ public class MessageRenderer {
                 fadeAmount = 1;
             }
         }
+    }
+
+    public void setGameOver(){
+        showGameOver = true;
+    }
+
+    private void drawGameOver(SpriteBatch batch) {
+        // Draw energy balance
+        GlyphLayout easyLayout = new GlyphLayout(AssetsManager.messageBitmapFont, gameOverMessage);
+        AssetsManager.messageBitmapFont.draw(batch,
+                gameOverMessage,
+                gameOverPosition.x - (easyLayout.width / 2),
+                gameOverPosition.y - (easyLayout.height / 2),
+                easyLayout.width,
+                Align.center,
+                false
+        );
     }
 
     public void dispose() {

@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import com.nerddaygames.rupert.games.Protect.gameobjects.factories.SpawnPoints;
 import com.nerddaygames.rupert.games.Protect.managers.GameManager;
 import com.nerddaygames.rupert.games.Protect.utils.ProtectConstants;
@@ -18,7 +19,8 @@ public class EnemyObjectBoss extends EnemyObject {
     // TODO when destroyed go to win screen
 
     GameManager gameManager;
-    Circle spawnArea;
+    Array<Circle> spawnAreas;
+    // Circle spawnArea;
     SpawnPoints spawnPoints;
     Random random;
 
@@ -35,7 +37,8 @@ public class EnemyObjectBoss extends EnemyObject {
         this.gameManager = gameManager;
         type = ProtectConstants.EnemyTypes.BOSS;
 
-        spawnArea = null;
+        spawnAreas = new Array<Circle>();
+        //spawnArea = null;
 
         health = ProtectConstants.BOSS_MAX_HEALTH;
         hitStrength = ProtectConstants.BOSS_HITSTRENGTH;
@@ -65,6 +68,7 @@ public class EnemyObjectBoss extends EnemyObject {
 
         }
         if(inOrbit) {
+
             // Gdx.app.log("EnemyObjectBoss", "Angle" + angle);
 
 
@@ -77,13 +81,18 @@ public class EnemyObjectBoss extends EnemyObject {
                 dead = true;
             }
 
+            if(spawnAreas.size > 0){
+                checkSpawnArea();
+            }
 
+            /*
             if(spawnArea != null){
                 if(checkCollision(spawnArea)){
                     gameManager.createBossSpawn(new Vector2(spawnArea.x, spawnArea.y));
                     spawnArea = null;
                 }
             }
+            */
                 tickSpawnTimer();
 
 
@@ -107,12 +116,26 @@ public class EnemyObjectBoss extends EnemyObject {
 
     }
 
+    private void checkSpawnArea() {
+        for(int i = 0; i < spawnAreas.size; i++){
+            if(checkCollision(spawnAreas.get(i))) {
+                gameManager.createBossSpawn(new Vector2(spawnAreas.get(i).x, spawnAreas.get(i).y));
+                spawnAreas.removeIndex(i);
+            }
+        }
+    }
+
     private void tickSpawnTimer() {
         if(spawnTimer > 0){
             spawnTimer--;
         }else{
-            if(spawnArea == null) {
-                spawnArea = gameManager.getBossSpawnCircle();
+            if(spawnAreas.size == 0) {
+                if(random.nextBoolean()) {
+                    spawnAreas.add(gameManager.getBossSpawnCircle());
+                }else{
+                    spawnAreas.add(gameManager.getBossSpawnCircle());
+                    spawnAreas.add(gameManager.getBossSpawnCircle());
+                }
             }
             spawnTimer = spawnTime * random.nextFloat();
 
@@ -144,8 +167,10 @@ public class EnemyObjectBoss extends EnemyObject {
 
     public void debugDraw(ShapeRenderer shapeRenderer){
         super.debugDraw(shapeRenderer);
-        if(spawnArea != null) {
+        /*
+        for(Circle spawnArea: spawnAreas){
             shapeRenderer.circle(spawnArea.x, spawnArea.y, spawnArea.radius);
         }
+        */
     }
 }

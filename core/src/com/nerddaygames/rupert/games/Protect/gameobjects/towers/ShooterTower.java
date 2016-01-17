@@ -31,7 +31,7 @@ public class ShooterTower extends Tower{
         maxHealth = ProtectConstants.SHOOTER_MAX_HEALTH;
         health = maxHealth;
         bulletDamage = 35;
-        range = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE * 3f);
+        range = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE * 4f);
 
     }
 
@@ -60,7 +60,7 @@ public class ShooterTower extends Tower{
         super.debugDraw(shapeRenderer);
 
         // circle target
-        if(target != null) {
+        if(target != null && !target.isDead()) {
             if (target.isEnabled()) {
                 shapeRenderer.setColor(Color.RED);
                 shapeRenderer.circle(target.getPosition().x, target.getPosition().y, (ProtectConstants.GAME_OBJECT_SIZE / 2) + 2);

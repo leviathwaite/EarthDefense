@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.nerddaygames.rupert.games.Protect.managers.AssetsManager;
 import com.nerddaygames.rupert.games.Protect.utils.ProtectConstants;
 import com.nerddaygames.rupert.games.SpaceLifeGame;
 
@@ -17,10 +19,8 @@ public class WinScreen implements Screen, InputProcessor {
 
     private SpaceLifeGame game;
     private SpriteBatch batch;
-    private ShapeRenderer shapeRenderer;
-    private boolean debug = true;
 
-    private ExtendViewport viewport;
+    private StretchViewport viewport;
 
     public WinScreen(SpaceLifeGame game){
         this.game = game;
@@ -30,11 +30,7 @@ public class WinScreen implements Screen, InputProcessor {
     public void show() {
         batch = new SpriteBatch();
 
-        // TODO move to debug
-        shapeRenderer = new ShapeRenderer();
-        shapeRenderer.setAutoShapeType(true);
-
-        viewport = new ExtendViewport(ProtectConstants.VIEWPORT_WIDTH, ProtectConstants.VIEWPORT_HEIGHT);
+        viewport = new StretchViewport(ProtectConstants.VIEWPORT_WIDTH, ProtectConstants.VIEWPORT_HEIGHT);
 
         Gdx.input.setInputProcessor(this);
     }
@@ -43,25 +39,23 @@ public class WinScreen implements Screen, InputProcessor {
     public void render(float delta) {
         viewport.apply();
 
-        Gdx.gl.glClearColor(0, 0.65f, 0, 1);
+        Gdx.gl.glClearColor(0, 0.45f, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.begin();
-
+        batch.draw(AssetsManager.thanks, ProtectConstants.VIEWPORT_WIDTH_CENTER - (ProtectConstants.VIEWPORT_HEIGHT / 4),
+                ProtectConstants.VIEWPORT_HEIGHT / 4,
+                ProtectConstants.VIEWPORT_HEIGHT / 4, ProtectConstants.VIEWPORT_HEIGHT / 4,
+                ProtectConstants.VIEWPORT_HEIGHT / 2, ProtectConstants.VIEWPORT_HEIGHT / 2,
+                1, 1, 0);
         batch.end();
 
-        if(debug){
-            debugDraw();
-        }
     }
 
-    private void debugDraw() {
-
-    }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width, height, true);
     }
 
     @Override
@@ -81,7 +75,8 @@ public class WinScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
+        game.dispose();
     }
 
     @Override
@@ -106,7 +101,7 @@ public class WinScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-        game.setSetGameScreen();
+        game.setMenuScreen();
         return false;
     }
 

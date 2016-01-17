@@ -26,6 +26,8 @@ public class ProtectConstants {
     public static final float MENU_TEXT_OFFSET_X = MENU_OBJECT_MIN_SIZE / 2;
     public static final float MENU_TEXT_OFFSET_Y = MENU_OBJECT_MIN_SIZE / 4;
 
+    public static final float BUTTON_WIDTH = VIEWPORT_WIDTH / 3;
+    public static final float BUTTON_HEIGHT = BUTTON_WIDTH / 3;
 
     public static final float HEALTHBAR_WIDTH = MENU_WIDTH - (MENU_OBJECT_MIN_MARGIN * 2);
     public static final float HEALTHBAR_HEIGHT = 25;
@@ -39,12 +41,13 @@ public class ProtectConstants {
     public static final float BOOSTERTOWER_MULTIPLIER = 2;
 
     // used in SpawnPoints to draw grid
-    public static final Color GRID_COLOR = Color.LIGHT_GRAY;
+    public static final Color GRID_COLOR = Color.GRAY;
 
     public static final float EARTH_SIZE = 50;
 
     public static final int RINGS = 3; // ROWS
     public static final int COLUMNS = 10;
+    public static final Color SHOOTER_RANGE_COLOR = new Color(0, 0, 0.5f, 0.5f);
 
     public static float RING1 = ProtectConstants.EARTH_SIZE * 1.5f - (ProtectConstants.GAME_OBJECT_SIZE / 2);
     public static float RING2 = ProtectConstants.EARTH_SIZE * 2.5f - (ProtectConstants.GAME_OBJECT_SIZE / 2);

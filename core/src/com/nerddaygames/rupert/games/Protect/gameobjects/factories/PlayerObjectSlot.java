@@ -1,6 +1,7 @@
 package com.nerddaygames.rupert.games.Protect.gameobjects.factories;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
@@ -33,8 +34,11 @@ public class PlayerObjectSlot {
     }
 
     public void debugDraw(ShapeRenderer shapeRenderer){
+
         shapeRenderer.set(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(Color.DARK_GRAY);
         shapeRenderer.circle(collisionCircle.x, collisionCircle.y, collisionCircle.radius);
+
     }
 
     public boolean isOccupied(){

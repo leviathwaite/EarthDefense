@@ -99,8 +99,8 @@ public class SpecialEffects {
     private void drawFlashYellow() {
         yellowFade = Interpolation.fade.apply(yellowFadeElapsed / FADE_IN_TIME);
         //Gdx.app.log("SpecialEffects", "yellowFade: " + yellowFade);
-        batch.setColor(Color.YELLOW.r, Color.YELLOW.g, Color.YELLOW.b, yellowFade / 2);
-        batch.draw(AssetsManager.rect, 0, 0, width, height);
+        batch.setColor(Color.YELLOW.r, Color.YELLOW.g, Color.YELLOW.b, yellowFade);
+        batch.draw(AssetsManager.rect, 0, height - ProtectConstants.GAME_OBJECT_SIZE, ProtectConstants.MENU_WIDTH, height);
         batch.setColor(orgColor);
 
     }

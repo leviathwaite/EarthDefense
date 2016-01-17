@@ -1,6 +1,7 @@
 package com.nerddaygames.rupert.games.Protect.gameobjects.towers;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Vector2;
 import com.nerddaygames.rupert.games.Protect.managers.GameManager;
 import com.nerddaygames.rupert.games.Protect.utils.ProtectConstants;
@@ -12,6 +13,7 @@ import java.util.Random;
  */
 public class EnergyTower extends Tower{
 
+    Circle range;
     Vector2 position;
     GameManager gameManager;
     Random random;
@@ -22,6 +24,8 @@ public class EnergyTower extends Tower{
 
     public EnergyTower(GameManager gameManager, Vector2 position){
         super(position);
+        range = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE / 2);
+        collisionCircle = new Circle(position, ProtectConstants.GAME_OBJECT_SIZE / 2);
         this.gameManager = gameManager;
         random = new Random();
 
@@ -30,6 +34,7 @@ public class EnergyTower extends Tower{
 
     private void init(){
         type = ProtectConstants.TowerTypes.ENERGY;
+
         maxHealth = ProtectConstants.ENERGY_MAX_HEALTH;
         health = maxHealth;
 

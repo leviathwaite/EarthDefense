@@ -106,10 +106,12 @@ public class EnemyObject {
 
     // TODO make setters and have world renderer draw
     public void debugDraw(ShapeRenderer shapeRenderer){
+        /*
         shapeRenderer.set(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(Color.YELLOW);
         // shapeRenderer.circle(position.x, position.y, collisionRadius);
         shapeRenderer.circle(collisionCircle.x, collisionCircle.y, collisionCircle.radius);
+        */
     }
 
     public Vector2 getPosition(){

@@ -76,12 +76,15 @@ public class Tower extends Entity {
 
     public void debugDraw(ShapeRenderer shapeRenderer) {
         shapeRenderer.set(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(Color.BLUE);
-        shapeRenderer.circle(range.x, range.y, range.radius);
+        if(type == ProtectConstants.TowerTypes.SHOOTER) {
+            shapeRenderer.setColor(ProtectConstants.SHOOTER_RANGE_COLOR);
+            shapeRenderer.circle(range.x, range.y, range.radius);
+        }
 
+        /*
         shapeRenderer.setColor(Color.WHITE);
         shapeRenderer.circle(collisionCircle.x, collisionCircle.y, collisionCircle.radius);
-
+    */
 
     }
 

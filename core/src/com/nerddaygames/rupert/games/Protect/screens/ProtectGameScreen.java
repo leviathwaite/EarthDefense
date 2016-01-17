@@ -60,7 +60,9 @@ public class ProtectGameScreen extends ScreenAdapter implements InputProcessor {
     public void render(float delta) {
         viewport.apply();
 
-        gameManager.update(delta);
+        if(!gameManager.isPaused()) {
+            gameManager.update(delta);
+        }
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -146,11 +148,24 @@ public class ProtectGameScreen extends ScreenAdapter implements InputProcessor {
                 gameManager.printInfo();
                 gameManager.debugInfo();
                 break;
+            case Input.Keys.P:
+                gameManager.togglePause();
+                break;
             case Input.Keys.R:
                 gameManager.reset();
                 break;
             case Input.Keys.S:
-                gameManager.specialEffectTest();
+
+                // gameManager.specialEffectTest();
+                break;
+            case Input.Keys.ESCAPE:
+                gameManager.setPause();
+                game.setMenuScreen();
+                break;
+            case Input.Keys.F1:
+                gameManager.setPause();
+                game.setHelpScreen();
+
                 break;
             default:
                 break;
@@ -172,6 +187,11 @@ public class ProtectGameScreen extends ScreenAdapter implements InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         Vector2 worldClick = viewport.unproject(new Vector2(screenX, screenY));
         gameManager.touched(worldClick);
+
+        if(gameManager.getGameOver()){
+            gameManager.setGameOver();
+            gameManager.reset();
+        }
         return false;
     }
 

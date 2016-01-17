@@ -6,7 +6,12 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.nerddaygames.rupert.games.Protect.managers.AssetsManager;
+import com.nerddaygames.rupert.games.Protect.screens.Buttons.HelpButton;
+import com.nerddaygames.rupert.games.Protect.screens.Buttons.StartButton;
 import com.nerddaygames.rupert.games.Protect.utils.ProtectConstants;
 import com.nerddaygames.rupert.games.SpaceLifeGame;
 
@@ -20,7 +25,14 @@ public class MenuScreen implements Screen, InputProcessor {
     private ShapeRenderer shapeRenderer;
     private boolean debug = true;
 
-    private ExtendViewport viewport;
+    private StretchViewport viewport;
+
+    private Vector2 startButtonPosition;
+    private StartButton startButton;
+
+    private Vector2 helpButtonPosition;
+    private HelpButton helpButton;
+
 
     public MenuScreen(SpaceLifeGame game){
         this.game = game;
@@ -29,12 +41,18 @@ public class MenuScreen implements Screen, InputProcessor {
     @Override
     public void show() {
         batch = new SpriteBatch();
-
-        // TODO move to debug
         shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
 
-        viewport = new ExtendViewport(ProtectConstants.VIEWPORT_WIDTH, ProtectConstants.VIEWPORT_HEIGHT);
+
+        viewport = new StretchViewport(ProtectConstants.VIEWPORT_WIDTH, ProtectConstants.VIEWPORT_HEIGHT);
+
+        startButtonPosition = new Vector2(ProtectConstants.VIEWPORT_WIDTH / 3, ProtectConstants.VIEWPORT_HEIGHT / 3);
+        startButton = new StartButton(startButtonPosition);
+
+        helpButtonPosition = new Vector2(ProtectConstants.VIEWPORT_WIDTH / 3,
+                ProtectConstants.VIEWPORT_HEIGHT / 3 - (ProtectConstants.BUTTON_HEIGHT * 1.5f));
+        helpButton = new HelpButton(helpButtonPosition);
 
         Gdx.input.setInputProcessor(this);
     }
@@ -47,7 +65,12 @@ public class MenuScreen implements Screen, InputProcessor {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.begin();
-
+        batch.draw(AssetsManager.menubackground, 0, 0,
+                ProtectConstants.VIEWPORT_WIDTH / 2, ProtectConstants.VIEWPORT_HEIGHT / 2,
+                ProtectConstants.VIEWPORT_WIDTH, ProtectConstants.VIEWPORT_HEIGHT,
+                1, 1, 0);
+        startButton.draw(batch);
+        helpButton.draw(batch);
         batch.end();
 
         if(debug){
@@ -56,12 +79,18 @@ public class MenuScreen implements Screen, InputProcessor {
     }
 
     private void debugDraw() {
+        shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        startButton.debugDraw(shapeRenderer);
+        helpButton.debugDraw(shapeRenderer);
+        shapeRenderer.end();
+
 
     }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width, height, true);
     }
 
     @Override
@@ -81,7 +110,9 @@ public class MenuScreen implements Screen, InputProcessor {
 
     @Override
     public void dispose() {
-
+        batch.dispose();
+        shapeRenderer.dispose();
+        game.dispose();
     }
 
     @Override
@@ -106,7 +137,14 @@ public class MenuScreen implements Screen, InputProcessor {
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        Vector2 worldClick = viewport.unproject(new Vector2(screenX, screenY));
+        if(startButton.checkForTouch(worldClick)){
+            game.setSetGameScreen();
+        }
 
+        if(helpButton.checkForTouch(worldClick)){
+            game.setHelpScreen();
+        }
         return false;
     }
 

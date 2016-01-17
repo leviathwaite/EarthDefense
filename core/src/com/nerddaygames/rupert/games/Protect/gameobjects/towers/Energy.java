@@ -16,7 +16,10 @@ public class Energy {
     Vector2 position;
     Random random;
     Vector2 velocity;
+
+    float spinSpeed;
     float rotation = 0; // TODO make rotate, fade out and pulse. move shorter distance
+
     Circle collisionCircle;
     boolean dead = false;
 
@@ -30,6 +33,10 @@ public class Energy {
         random = new Random();
         collisionCircle = new Circle(position.x, position.y, ProtectConstants.GAME_OBJECT_SIZE / 2);
 
+        spinSpeed = random.nextFloat();
+        if(random.nextBoolean()){
+            spinSpeed = -spinSpeed;
+        }
         setVelocity();
     }
 
@@ -46,6 +53,8 @@ public class Energy {
 
 
     public void update(float delta){
+        rotation += spinSpeed;
+
         if(fadeTimer > 0){
             fadeTimer--;
             position.x += velocity.x;
